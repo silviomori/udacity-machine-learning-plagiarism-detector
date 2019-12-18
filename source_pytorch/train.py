@@ -1,6 +1,7 @@
 import argparse
 import json
 import os
+
 import pandas as pd
 import torch
 import torch.nn as nn
@@ -77,6 +78,7 @@ def train(model, train_loader, epochs, criterion, optimizer, device):
         for batch in train_loader:
             # get data
             batch_x, batch_y = batch
+            batch_y.unsqueeze_(0)
 
             batch_x = batch_x.to(device)
             batch_y = batch_y.to(device)
@@ -128,8 +130,7 @@ if __name__ == '__main__':
     # Model Parameters
     parser.add_argument('--input-features', type=int, default=2, metavar='IN',
                         help='number of input features')
-    parser.add_argument('--hidden-dim', type=list, metavar='H',
-                        nargs='+', default=[64,64],
+    parser.add_argument('--hidden-dim', metavar='H', nargs='*', default=[64,64],
                         help='size of hidden layers')
     parser.add_argument('--output-dim', type=int, default=1, metavar='OUT',
                         help='number of outputs')
