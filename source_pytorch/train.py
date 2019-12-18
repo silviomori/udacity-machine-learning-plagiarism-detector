@@ -11,7 +11,7 @@ import torch.utils.data
 # imports the model in model.py by name
 from model import BinaryClassifier
 
-                                                                               
+
 def model_fn(model_dir):
     """Load the PyTorch model from the `model_dir` directory."""
     print("Loading model.")
@@ -59,15 +59,23 @@ def _get_train_data_loader(batch_size, training_dir):
 def train(model, train_loader, epochs, criterion, optimizer, device):
     """
     This is the training method that is called by the PyTorch training script.
-    The parameters
-    passed are as follows:
+    The parameters passed are as follows:
+
+    Arguments:
     model        - The PyTorch model that we wish to train.
     train_loader - The PyTorch DataLoader that should be used during training.
     epochs       - The total number of epochs to train for.
     criterion    - The loss function used for training.
     optimizer    - The optimizer to use during training.
     device       - Where the model and data should be loaded (gpu or cpu).
+
+    Return:
+    :return the best model's state_dict
     """
+
+    min_loss_value = 0.3
+    min_loss_epoch = -1
+    model_state_dict = None
 
     # training loop is provided
     for epoch in range(1, epochs + 1):
@@ -95,8 +103,20 @@ def train(model, train_loader, epochs, criterion, optimizer, device):
 
             total_loss += loss.data.item()
 
+        loss = total_loss / len(train_loader)
         print("Epoch: {}, Loss: {}".
-              format(epoch, total_loss / len(train_loader)))
+              format(epoch, loss))
+
+        if loss < min_loss_value:
+            min_loss_value = loss
+            min_loss_epoch = epoch
+            model_state_dict = model.cpu().state_dict()
+            model.to(device)
+
+    print('\nMinimum loss: {}; reached in epoch {}' \
+          .format(min_loss_value, min_loss_epoch))
+
+    return model_state_dict
 
 ## DONE: Complete the main code
 if __name__ == '__main__':
@@ -168,7 +188,8 @@ if __name__ == '__main__':
 
     # Trains the model
     # (given line of code, which calls the above training function)
-    train(model, train_loader, args.epochs, criterion, optimizer, device)
+    model_state_dict = train(model, train_loader, args.epochs,
+                             criterion, optimizer, device)
 
     ## DONE: complete in the model_info by adding three argument names,
     # Keep the keys of this dictionary as they are
@@ -187,4 +208,4 @@ if __name__ == '__main__':
     # Save the model parameters
     model_path = os.path.join(args.model_dir, 'model.pth')
     with open(model_path, 'wb') as f:
-        torch.save(model.cpu().state_dict(), f)
+        torch.save(model_state_dict, f)
